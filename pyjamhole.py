@@ -1,12 +1,14 @@
 #!/usr/bin/python3
-import requests
 import re
-from time import sleep
+
 import cronus.beat as beat
-from gpiozero import JamHat
 import psutil
+import requests
+from gpiozero import JamHat
+from loguru import logger
 
 JAMHAT = JamHat()
+URL = "http://localhost/admin/api.php"
 
 
 def get_web_password():
@@ -17,13 +19,13 @@ def get_web_password():
 
 def is_pihole_running():
     with open("/var/run/pihole-FTL.pid") as f:
-        if psutil.pid_exists(f.read()):
+        if psutil.pid_exists(int(f.read().strip())):
             return True
         return False
 
 
 def get_status():
-    res = requests.get("http://localhost/admin/api.php")
+    res = requests.get(URL)
     data = res.json()
     return data["status"] == "enabled"
 
@@ -33,28 +35,50 @@ def check_pihole_service():
         JAMHAT.lights_1.green.off()
         JAMHAT.lights_1.yellow.off()
         JAMHAT.lights_1.red.blink()
+        logger.info("pihole not running")
         return
     pihole_enabled = get_status()
     if pihole_enabled:
+        JAMHAT.lights_1.off()
         JAMHAT.lights_1.green.on()
-        JAMHAT.lights_1.yellow.off()
-        JAMHAT.lights_1.red.off()
+        logger.info("service running")
     else:
         JAMHAT.lights_1.green.off()
         JAMHAT.lights_1.red.off()
         JAMHAT.lights_1.yellow.blink()
+        logger.info("service running not blocking")
+
 
 def button_pressed():
-    print('button pressed')
+    logger.info("Button 1 pressed")
+    r = requests.get(URL, params={"disable": 15, "auth": get_web_password()})
+
+
+def check_pihole_version():
+    r = requests.get(URL, params={"versions": True})
+    data = r.json()
+    logger.debug(data)
+    if data["core_update"] or data["web_update"] or data["FTL_update"]:
+        JAMHAT.lights_2.off()
+        JAMHAT.lights_2.yellow.blink()
+    else:
+        JAMHAT.lights_2.off()
+        JAMHAT.lights_2.green.on()
+
 
 if __name__ == "__main__":
-    JAMHAT.off()
-    JAMHAT.button_1.when_pressed = button_pressed
-    JAMHAT.lights_1.red.blink()
-    JAMHAT.lights_2.red.blink()
-    beat.set_rate(5 / 60)
-    while beat.true():
-        # Check pihole status
-        check_pihole_service()
-
-        beat.sleep()
+    try:
+        JAMHAT.off()
+        JAMHAT.button_1.when_pressed = button_pressed
+        JAMHAT.lights_1.red.blink()
+        JAMHAT.lights_2.red.blink()
+        beat.set_rate(0.2)
+        while beat.true():
+            # Check pihole status
+            logger.debug("beat")
+            check_pihole_service()
+            check_pihole_version()
+            beat.sleep()
+    except KeyboardInterrupt:
+        JAMHAT.off()
+        logger.info("Stopping")
