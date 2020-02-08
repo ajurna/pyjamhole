@@ -9,7 +9,7 @@ from loguru import logger
 
 JAMHAT = JamHat()
 URL = "http://localhost/admin/api.php"
-
+DISABLE_TIME = 300
 
 def get_web_password():
     with open("/etc/pihole/setupVars.conf") as f:
@@ -49,10 +49,14 @@ def check_pihole_service():
         logger.info("service running not blocking")
 
 
-def button_pressed():
-    logger.info("Button 1 pressed")
-    r = requests.get(URL, params={"disable": 15, "auth": get_web_password()})
+def disable_button():
+    logger.info("disable button pressed")
+    r = requests.get(URL, params={"disable": DISABLE_TIME, "auth": get_web_password()})
 
+
+def enable_button():
+    logger.info("enable button pressed")
+    r = requests.get(URL, params={"enable": True, "auth": get_web_password()})
 
 def check_pihole_version():
     r = requests.get(URL, params={"versions": True})
@@ -69,7 +73,8 @@ def check_pihole_version():
 if __name__ == "__main__":
     try:
         JAMHAT.off()
-        JAMHAT.button_1.when_pressed = button_pressed
+        JAMHAT.button_1.when_pressed = enable_button
+        JAMHAT.button_2.when_pressed = disable_button
         JAMHAT.lights_1.red.blink()
         JAMHAT.lights_2.red.blink()
         beat.set_rate(0.2)
