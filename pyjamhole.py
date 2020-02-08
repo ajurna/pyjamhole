@@ -52,11 +52,13 @@ def check_pihole_service():
 def disable_button():
     logger.info("disable button pressed")
     r = requests.get(URL, params={"disable": DISABLE_TIME, "auth": get_web_password()})
+    check_pihole_service()
 
 
 def enable_button():
     logger.info("enable button pressed")
     r = requests.get(URL, params={"enable": True, "auth": get_web_password()})
+    check_pihole_service()
 
 def check_pihole_version():
     r = requests.get(URL, params={"versions": True})
