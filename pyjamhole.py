@@ -11,6 +11,7 @@ JAMHAT = JamHat()
 URL = "http://localhost/admin/api.php"
 DISABLE_TIME = 300
 
+
 def get_web_password():
     with open("/etc/pihole/setupVars.conf") as f:
         search = re.search(r"WEBPASSWORD=(?P<web_password>[a-z0-9]+)", f.read())
@@ -59,6 +60,7 @@ def enable_button():
     logger.info("enable button pressed")
     r = requests.get(URL, params={"enable": True, "auth": get_web_password()})
     check_pihole_service()
+
 
 def check_pihole_version():
     r = requests.get(URL, params={"versions": True})
