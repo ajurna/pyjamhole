@@ -7,7 +7,7 @@ import requests
 from gpiozero import JamHat
 from loguru import logger
 
-JAMHAT = JamHat()
+
 URL = "http://localhost/admin/api.php"
 DISABLE_TIME = 300
 
@@ -75,6 +75,7 @@ def check_pihole_version():
 
 
 if __name__ == "__main__":
+    JAMHAT = JamHat()
     try:
         JAMHAT.off()
         JAMHAT.button_1.when_pressed = enable_button
